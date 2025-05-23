@@ -10,6 +10,7 @@ import com.example.eduboost_backend.model.MapNode;
 import com.example.eduboost_backend.model.MentalMap;
 import com.example.eduboost_backend.service.CloudinaryService;
 import com.example.eduboost_backend.service.MentalMapService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/maps")
+@SecurityRequirement(name = "bearerAuth")
 public class MentalMapController {
 
     @Autowired

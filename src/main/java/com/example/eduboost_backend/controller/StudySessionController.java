@@ -7,6 +7,7 @@ import com.example.eduboost_backend.dto.session.StudySessionDTO;
 import com.example.eduboost_backend.dto.session.UpdateStudySessionRequest;
 import com.example.eduboost_backend.model.StudySession;
 import com.example.eduboost_backend.service.StudySessionService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/sessions")
+@SecurityRequirement(name = "bearerAuth")
 public class StudySessionController {
 
     @Autowired

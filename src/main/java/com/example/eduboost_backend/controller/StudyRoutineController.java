@@ -8,6 +8,7 @@ import com.example.eduboost_backend.dto.routine.StudyRoutineDTO;
 import com.example.eduboost_backend.model.StudyBlock;
 import com.example.eduboost_backend.model.StudyRoutine;
 import com.example.eduboost_backend.service.StudyRoutineService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/routines")
+@SecurityRequirement(name = "bearerAuth")
 public class StudyRoutineController {
 
     @Autowired

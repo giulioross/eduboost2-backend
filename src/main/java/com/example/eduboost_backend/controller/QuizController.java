@@ -9,6 +9,7 @@ import com.example.eduboost_backend.dto.quiz.QuizDTO;
 import com.example.eduboost_backend.model.Question;
 import com.example.eduboost_backend.model.Quiz;
 import com.example.eduboost_backend.service.QuizService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
+@SecurityRequirement(name = "bearerAuth")
 @RequestMapping("/api/quizzes")
 public class QuizController {
 

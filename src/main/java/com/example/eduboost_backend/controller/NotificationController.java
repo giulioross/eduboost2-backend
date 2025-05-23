@@ -5,6 +5,7 @@ import com.example.eduboost_backend.dto.notification.CreateNotificationRequest;
 import com.example.eduboost_backend.dto.notification.NotificationDTO;
 import com.example.eduboost_backend.model.Notification;
 import com.example.eduboost_backend.service.NotificationService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/notifications")
+@SecurityRequirement(name = "bearerAuth")
 public class NotificationController {
 
     @Autowired

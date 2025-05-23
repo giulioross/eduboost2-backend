@@ -4,6 +4,7 @@ import com.example.eduboost_backend.dto.auth.MessageResponse;
 import com.example.eduboost_backend.model.User;
 import com.example.eduboost_backend.service.CloudinaryService;
 import com.example.eduboost_backend.service.UserService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +16,7 @@ import java.io.IOException;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/users")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     @Autowired
