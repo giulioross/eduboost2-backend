@@ -1,6 +1,5 @@
 package com.example.eduboost_backend.dto.map;
 
-
 import com.example.eduboost_backend.model.MapNode;
 import lombok.AllArgsConstructor;
 import lombok.Data;

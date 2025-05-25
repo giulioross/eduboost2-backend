@@ -38,7 +38,6 @@ public class MentalMapDTO {
         dto.setUpdatedAt(map.getUpdatedAt());
 
         if (map.getNodes() != null) {
-            // Only include root nodes (with no parent)
             dto.setRootNodes(map.getNodes().stream()
                     .filter(node -> node.getParentNode() == null)
                     .map(MapNodeDTO::fromEntity)

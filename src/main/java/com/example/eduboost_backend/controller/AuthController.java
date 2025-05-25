@@ -19,6 +19,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
@@ -49,10 +51,8 @@ public class AuthController {
 
         return ResponseEntity.ok(new JwtResponse(
                 jwt,
-                userDetails.getId(),
-                userDetails.getUsername(),
-                userDetails.getEmail(),
-                null // Ruoli rimossi
+                userDetails.getId().toString(),
+                List.of(userDetails.getUsername())
         ));
     }
 

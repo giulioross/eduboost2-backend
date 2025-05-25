@@ -1,6 +1,5 @@
 package com.example.eduboost_backend.controller;
 
-
 import com.example.eduboost_backend.dto.auth.MessageResponse;
 import com.example.eduboost_backend.dto.map.CreateMapNodeRequest;
 import com.example.eduboost_backend.dto.map.CreateMentalMapRequest;
@@ -61,7 +60,7 @@ public class MentalMapController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteMap(@PathVariable Long id) {
+    public ResponseEntity<MessageResponse> deleteMap(@PathVariable Long id) {
         mentalMapService.deleteMap(id);
         return ResponseEntity.ok(new MessageResponse("Mental map deleted successfully!"));
     }
@@ -79,7 +78,7 @@ public class MentalMapController {
     }
 
     @DeleteMapping("/nodes/{nodeId}")
-    public ResponseEntity<?> deleteNode(@PathVariable Long nodeId) {
+    public ResponseEntity<MessageResponse> deleteNode(@PathVariable Long nodeId) {
         mentalMapService.deleteNode(nodeId);
         return ResponseEntity.ok(new MessageResponse("Map node deleted successfully!"));
     }
@@ -103,15 +102,14 @@ public class MentalMapController {
     }
 
     @PutMapping("/{mapId}/content")
-    public ResponseEntity<?> saveMapContent(@PathVariable Long mapId, @RequestBody String mapContent) {
+    public ResponseEntity<MessageResponse> saveMapContent(@PathVariable Long mapId, @RequestBody String mapContent) {
         mentalMapService.saveMapContent(mapId, mapContent);
         return ResponseEntity.ok(new MessageResponse("Map content saved successfully!"));
     }
 
     @PostMapping("/{mapId}/image")
-    public ResponseEntity<?> uploadMapImage(@PathVariable Long mapId, @RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<MessageResponse> uploadMapImage(@PathVariable Long mapId, @RequestParam("file") MultipartFile file) throws IOException {
         MentalMap map = mentalMapService.getMapById(mapId);
-
         String imageUrl = cloudinaryService.uploadFile(file);
         map.setImageUrl(imageUrl);
         mentalMapService.updateMap(mapId, new CreateMentalMapRequest() {{
@@ -120,7 +118,6 @@ public class MentalMapController {
             setSubject(map.getSubject());
             setTopic(map.getTopic());
         }});
-
         return ResponseEntity.ok(new MessageResponse("Map image uploaded successfully!"));
     }
 }

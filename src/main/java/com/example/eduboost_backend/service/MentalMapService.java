@@ -1,66 +1,67 @@
 package com.example.eduboost_backend.service;
 
-
 import com.example.eduboost_backend.dto.map.CreateMapNodeRequest;
 import com.example.eduboost_backend.dto.map.CreateMentalMapRequest;
+import com.example.eduboost_backend.exeption.ResourceNotFoundException;
+import com.example.eduboost_backend.exeption.UserDetailsImpl;
 import com.example.eduboost_backend.model.MapNode;
 import com.example.eduboost_backend.model.MentalMap;
 import com.example.eduboost_backend.model.User;
 import com.example.eduboost_backend.repository.MapNodeRepository;
 import com.example.eduboost_backend.repository.MentalMapRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 public class MentalMapService {
 
-    @Autowired
-    private MentalMapRepository mentalMapRepository;
+    private final MentalMapRepository mentalMapRepository;
+    private final MapNodeRepository mapNodeRepository;
+    private final UserService userService;
 
-    @Autowired
-    private MapNodeRepository mapNodeRepository;
+    // Iniezione attraverso il costruttore
+    public MentalMapService(
+            final MentalMapRepository mentalMapRepository,
+            final MapNodeRepository mapNodeRepository,
+            final UserService userService
+    ) {
+        this.mentalMapRepository = mentalMapRepository;
+        this.mapNodeRepository = mapNodeRepository;
+        this.userService = userService;
+    }
 
-    @Autowired
-    private UserService userService;
+    // ======================== METODI RELATIVI ALLA MENTAL MAP ========================
 
+    // Recupera tutte le mappe mentali dell'utente autenticato
     public List<MentalMap> getMapsByUser() {
-        User currentUser = userService.getCurrentUser();
-        return mentalMapRepository.findByUserOrderByUpdatedAtDesc(currentUser);
+        User user = getAuthenticatedUser();
+        return mentalMapRepository.findByUser(user);
     }
 
-    public MentalMap getMapById(Long id) {
-        User currentUser = userService.getCurrentUser();
-        MentalMap map = mentalMapRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Mental map not found with id: " + id));
-
-        if (!map.getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("You don't have permission to access this mental map");
-        }
-
-        return map;
+    // Recupera una mappa mentale per il suo ID
+    public MentalMap getMapById(final Long id) {
+        return mentalMapRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Mental map not found with id " + id));
     }
 
-    @Transactional
-    public MentalMap createMap(CreateMentalMapRequest request) {
-        User currentUser = userService.getCurrentUser();
-
+    // Crea una nuova mappa mentale per l'utente autenticato
+    public MentalMap createMap(final CreateMentalMapRequest request) {
+        User user = getAuthenticatedUser();
         MentalMap map = new MentalMap();
-        map.setUser(currentUser);
         map.setTitle(request.getTitle());
         map.setDescription(request.getDescription());
         map.setSubject(request.getSubject());
         map.setTopic(request.getTopic());
+        map.setUser(user);
 
         return mentalMapRepository.save(map);
     }
 
-    @Transactional
-    public MentalMap updateMap(Long id, CreateMentalMapRequest request) {
+    // Aggiorna una mappa mentale esistente
+    public MentalMap updateMap(final Long id, final CreateMentalMapRequest request) {
         MentalMap map = getMapById(id);
-
         map.setTitle(request.getTitle());
         map.setDescription(request.getDescription());
         map.setSubject(request.getSubject());
@@ -69,14 +70,23 @@ public class MentalMapService {
         return mentalMapRepository.save(map);
     }
 
-    @Transactional
-    public void deleteMap(Long id) {
+    // Elimina una mappa mentale esistente
+    public void deleteMap(final Long id) {
         MentalMap map = getMapById(id);
         mentalMapRepository.delete(map);
     }
 
-    @Transactional
-    public MapNode addNodeToMap(Long mapId, CreateMapNodeRequest request) {
+    // Salva il contenuto della mappa mentale (aggiornamento del campo 'mapContent')
+    public void saveMapContent(final Long mapId, final String mapContent) {
+        MentalMap map = getMapById(mapId);
+        map.setMapContent(mapContent);
+        mentalMapRepository.save(map);
+    }
+
+    // ======================== METODI RELATIVI AI NODI ========================
+
+    // Aggiunge un nuovo nodo alla mappa mentale
+    public MapNode addNodeToMap(final Long mapId, final CreateMapNodeRequest request) {
         MentalMap map = getMapById(mapId);
 
         MapNode node = new MapNode();
@@ -88,29 +98,21 @@ public class MentalMapService {
         node.setColor(request.getColor());
 
         if (request.getParentNodeId() != null) {
-            MapNode parentNode = mapNodeRepository.findById(request.getParentNodeId())
-                    .orElseThrow(() -> new RuntimeException("Parent node not found with id: " + request.getParentNodeId()));
+            MapNode parent = mapNodeRepository.findById(request.getParentNodeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent node not found with id " + request.getParentNodeId()));
 
-            // Check if parent node belongs to the same map
-            if (!parentNode.getMentalMap().getId().equals(mapId)) {
-                throw new RuntimeException("Parent node does not belong to this mental map");
-            }
-
-            node.setParentNode(parentNode);
+            node.setParentNode(parent);
+            parent.getChildNodes().add(node);
+            mapNodeRepository.save(parent);
         }
 
         return mapNodeRepository.save(node);
     }
 
-    @Transactional
-    public MapNode updateNode(Long nodeId, CreateMapNodeRequest request) {
-        User currentUser = userService.getCurrentUser();
+    // Aggiorna un nodo esistente
+    public MapNode updateNode(final Long nodeId, final CreateMapNodeRequest request) {
         MapNode node = mapNodeRepository.findById(nodeId)
-                .orElseThrow(() -> new RuntimeException("Map node not found with id: " + nodeId));
-
-        if (!node.getMentalMap().getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("You don't have permission to update this node");
-        }
+                .orElseThrow(() -> new ResourceNotFoundException("Map node not found with id " + nodeId));
 
         node.setContent(request.getContent());
         node.setNote(request.getNote());
@@ -118,57 +120,34 @@ public class MentalMapService {
         node.setYPosition(request.getYPosition());
         node.setColor(request.getColor());
 
-        if (request.getParentNodeId() != null) {
-            MapNode parentNode = mapNodeRepository.findById(request.getParentNodeId())
-                    .orElseThrow(() -> new RuntimeException("Parent node not found with id: " + request.getParentNodeId()));
-
-            // Check if parent node belongs to the same map
-            if (!parentNode.getMentalMap().getId().equals(node.getMentalMap().getId())) {
-                throw new RuntimeException("Parent node does not belong to this mental map");
-            }
-
-            node.setParentNode(parentNode);
-        } else {
-            node.setParentNode(null);
-        }
-
         return mapNodeRepository.save(node);
     }
 
-    @Transactional
-    public void deleteNode(Long nodeId) {
-        User currentUser = userService.getCurrentUser();
+    // Elimina un nodo esistente
+    public void deleteNode(final Long nodeId) {
         MapNode node = mapNodeRepository.findById(nodeId)
-                .orElseThrow(() -> new RuntimeException("Map node not found with id: " + nodeId));
-
-        if (!node.getMentalMap().getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("You don't have permission to delete this node");
-        }
-
+                .orElseThrow(() -> new ResourceNotFoundException("Map node not found with id " + nodeId));
         mapNodeRepository.delete(node);
     }
 
-    public List<MapNode> getRootNodes(Long mapId) {
+    // Recupera tutti i nodi radice per una mappa mentale
+    public List<MapNode> getRootNodes(final Long mapId) {
         MentalMap map = getMapById(mapId);
         return mapNodeRepository.findByMentalMapAndParentNodeIsNull(map);
     }
 
-    public List<MapNode> getChildNodes(Long nodeId) {
-        User currentUser = userService.getCurrentUser();
-        MapNode parentNode = mapNodeRepository.findById(nodeId)
-                .orElseThrow(() -> new RuntimeException("Map node not found with id: " + nodeId));
-
-        if (!parentNode.getMentalMap().getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("You don't have permission to access this node");
-        }
-
-        return mapNodeRepository.findByParentNode(parentNode);
+    // Recupera tutti i nodi figli di un nodo specifico
+    public List<MapNode> getChildNodes(final Long nodeId) {
+        MapNode parent = mapNodeRepository.findById(nodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Map node not found with id " + nodeId));
+        return mapNodeRepository.findByParentNode(parent);
     }
 
-    @Transactional
-    public void saveMapContent(Long mapId, String mapContent) {
-        MentalMap map = getMapById(mapId);
-        map.setMapContent(mapContent);
-        mentalMapRepository.save(map);
+    // ======================== METODI UTILI ========================
+
+    // Recupera l'utente attualmente autenticato
+    private User getAuthenticatedUser() {
+        UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userService.getUserById(userDetails.getId());
     }
 }

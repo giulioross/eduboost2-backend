@@ -1,8 +1,6 @@
 package com.example.eduboost_backend.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,24 +11,27 @@ import java.util.List;
 @Table(name = "map_nodes")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class MapNode {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "mental_map_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mental_map_id")
     private MentalMap mentalMap;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_node_id")
     private MapNode parentNode;
 
-    @NotBlank
+    @OneToMany(mappedBy = "parentNode", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MapNode> childNodes = new ArrayList<>();
+
+    @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(columnDefinition = "TEXT")
     private String note;
 
     private Integer xPosition;
@@ -38,7 +39,4 @@ public class MapNode {
     private Integer yPosition;
 
     private String color;
-
-    @OneToMany(mappedBy = "parentNode", cascade = CascadeType.ALL)
-    private List<MapNode> childNodes = new ArrayList<>();
 }

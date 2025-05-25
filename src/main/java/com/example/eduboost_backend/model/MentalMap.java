@@ -23,23 +23,20 @@ public class MentalMap {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
     @NotBlank
     private String title;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(columnDefinition = "TEXT")
-    private String mapContent; // JSON structure of the mental map
+    private String mapContent;
 
     private String subject;
 
     private String topic;
 
-    private String imageUrl; // For storing a rendered image of the map
+    private String imageUrl;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -47,6 +44,10 @@ public class MentalMap {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "mentalMap", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "mentalMap", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<MapNode> nodes = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 }
