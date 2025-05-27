@@ -3,12 +3,14 @@ package com.example.eduboost_backend.service;
 import com.example.eduboost_backend.dto.map.CreateMapNodeRequest;
 import com.example.eduboost_backend.dto.map.CreateMentalMapRequest;
 import com.example.eduboost_backend.exeption.ResourceNotFoundException;
-import com.example.eduboost_backend.exeption.UserDetailsImpl;
+
+import com.example.eduboost_backend.security.services.UserDetailServiceImpl;
 import com.example.eduboost_backend.model.MapNode;
 import com.example.eduboost_backend.model.MentalMap;
 import com.example.eduboost_backend.model.User;
 import com.example.eduboost_backend.repository.MapNodeRepository;
 import com.example.eduboost_backend.repository.MentalMapRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -147,7 +149,26 @@ public class MentalMapService {
 
     // Recupera l'utente attualmente autenticato
     private User getAuthenticatedUser() {
-        UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new RuntimeException("Authentication is null");
+        }
+        
+        if (!authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+        
+        Object principal = authentication.getPrincipal();
+        if (principal == null) {
+            throw new RuntimeException("Principal is null");
+        }
+        
+        if (!(principal instanceof UserDetailServiceImpl)) {
+            throw new RuntimeException("Principal is not UserDetailsImpl: " + principal.getClass().getName());
+        }
+        
+        UserDetailServiceImpl userDetails = (UserDetailServiceImpl) principal;
+        System.out.println("Getting user with ID: " + userDetails.getId());
         return userService.getUserById(userDetails.getId());
     }
 }

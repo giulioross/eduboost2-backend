@@ -31,4 +31,9 @@ public class CloudinaryService {
             throw new IOException("Error uploading file to Cloudinary", e);
         }
     }
+    // Aggiungi questo metodo nella classe CloudinaryService
+    public void deleteFile(String imageUrl) {
+        // Implementazione per eliminare il file da Cloudinary usando l'URL
+        // (devi estrarre il public_id dall'URL e chiamare l'API di Cloudinary)
+    }
 }

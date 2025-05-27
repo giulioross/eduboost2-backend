@@ -12,6 +12,7 @@ import com.example.eduboost_backend.service.MentalMapService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,18 +34,34 @@ public class MentalMapController {
     private CloudinaryService cloudinaryService;
 
     @GetMapping
-    public ResponseEntity<List<MentalMapDTO>> getAllMaps() {
-        List<MentalMap> maps = mentalMapService.getMapsByUser();
-        List<MentalMapDTO> mapDTOs = maps.stream()
-                .map(MentalMapDTO::fromEntity)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(mapDTOs);
+    public ResponseEntity<MessageResponse> getAllMaps() {
+        try {
+            List<MentalMap> maps = mentalMapService.getMapsByUser();
+            List<MentalMapDTO> mapDTOs = maps.stream()
+                    .map(MentalMapDTO::fromEntity)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.noCache())
+                    .body(new MessageResponse(mapDTOs.toString()));
+        } catch (RuntimeException e) {
+            System.out.println("Error in getAllMaps: " + e.getMessage());
+            return ResponseEntity.status(401)
+                    .body(new MessageResponse("Authentication error: " + e.getMessage()));
+        } catch (Exception e) {
+            System.out.println("Unexpected error in getAllMaps: " + e.getMessage());
+            return ResponseEntity.status(500)
+                    .body(new MessageResponse("Internal server error: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<MentalMapDTO> getMapById(@PathVariable Long id) {
         MentalMap map = mentalMapService.getMapById(id);
-        return ResponseEntity.ok(MentalMapDTO.fromEntity(map));
+        
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noCache())
+                .body(MentalMapDTO.fromEntity(map));
     }
 
     @PostMapping
@@ -61,6 +78,10 @@ public class MentalMapController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<MessageResponse> deleteMap(@PathVariable Long id) {
+        MentalMap map = mentalMapService.getMapById(id);
+        if (map.getImageUrl() != null) {
+            cloudinaryService.deleteFile(map.getImageUrl());
+        }
         mentalMapService.deleteMap(id);
         return ResponseEntity.ok(new MessageResponse("Mental map deleted successfully!"));
     }
@@ -89,7 +110,10 @@ public class MentalMapController {
         List<MapNodeDTO> nodeDTOs = nodes.stream()
                 .map(MapNodeDTO::fromEntity)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(nodeDTOs);
+        
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noCache())
+                .body(nodeDTOs);
     }
 
     @GetMapping("/nodes/{nodeId}/children")
@@ -98,7 +122,10 @@ public class MentalMapController {
         List<MapNodeDTO> nodeDTOs = nodes.stream()
                 .map(MapNodeDTO::fromEntity)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(nodeDTOs);
+        
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noCache())
+                .body(nodeDTOs);
     }
 
     @PutMapping("/{mapId}/content")
