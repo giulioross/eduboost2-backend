@@ -1,9 +1,7 @@
 package com.example.eduboost_backend.service;
 
 
-import com.example.eduboost_backend.dto.quiz.CreateOptionRequest;
-import com.example.eduboost_backend.dto.quiz.CreateQuestionRequest;
-import com.example.eduboost_backend.dto.quiz.CreateQuizRequest;
+import com.example.eduboost_backend.dto.quiz.*;
 import com.example.eduboost_backend.model.Option;
 import com.example.eduboost_backend.model.Question;
 import com.example.eduboost_backend.model.Quiz;
@@ -11,6 +9,7 @@ import com.example.eduboost_backend.model.User;
 import com.example.eduboost_backend.repository.OptionRepository;
 import com.example.eduboost_backend.repository.QuestionRepository;
 import com.example.eduboost_backend.repository.QuizRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +33,7 @@ public class QuizService {
 
     public List<Quiz> getQuizzesByUser() {
         User currentUser = userService.getCurrentUser();
-        return quizRepository.findByUserOrderByCreatedAtDesc(currentUser);
+        return quizRepository.findByUserWithQuestions(currentUser);
     }
 
     public Quiz getQuizById(Long id) {
@@ -59,11 +58,59 @@ public class QuizService {
         quiz.setDescription(request.getDescription());
         quiz.setSubject(request.getSubject());
         quiz.setTopic(request.getTopic());
-        quiz.setQuizType(request.getQuizType());
+        quiz.setQuizType(Quiz.QuizType.valueOf(request.getQuizType().name()));
         quiz.setAdaptive(request.isAdaptive());
         quiz.setTimeLimit(request.getTimeLimit());
 
         return quizRepository.save(quiz);
+    }
+
+    @Transactional
+    public Quiz createQuizWithQuestions(@Valid QuizRequest request) {
+        User currentUser = userService.getCurrentUser();
+
+        Quiz quiz = new Quiz();
+        quiz.setUser(currentUser);
+        quiz.setTitle(request.getTitle());
+        quiz.setDescription(request.getDescription());
+        quiz.setSubject(request.getSubject());
+        quiz.setTopic(request.getTopic());
+        quiz.setQuizType(request.getQuizType());
+        quiz.setAdaptive(request.isAdaptive());
+        quiz.setTimeLimit(request.getTimeLimit());
+
+        // Save quiz first to get ID
+        Quiz savedQuiz = quizRepository.save(quiz);
+
+        // Add all questions
+        for (CreateQuestionRequest questionRequest : request.getQuestions()) {
+            Question question = new Question();
+            question.setQuiz(savedQuiz);
+            question.setQuestionText(questionRequest.getQuestionText());
+            question.setQuestionType(questionRequest.getQuestionType());
+            question.setDifficulty(questionRequest.getDifficulty());
+            question.setPoints(questionRequest.getPoints());
+            question.setExplanation(questionRequest.getExplanation());
+            question.setCorrectAnswer(questionRequest.getCorrectAnswer());
+
+            // Save question first to get ID
+            Question savedQuestion = questionRepository.save(question);
+
+            // Add options if applicable
+            if (questionRequest.getOptions() != null && !questionRequest.getOptions().isEmpty()) {
+                for (CreateOptionRequest optionRequest : questionRequest.getOptions()) {
+                    Option option = new Option();
+                    option.setQuestion(savedQuestion);
+                    option.setOptionText(optionRequest.getOptionText());
+                    option.setCorrect(optionRequest.isCorrect());
+                    optionRepository.save(option);
+                }
+            }
+        }
+
+        // Refresh quiz to get all questions
+        return quizRepository.findById(savedQuiz.getId()).orElseThrow(() -> 
+            new RuntimeException("Quiz not found after creation"));
     }
 
     @Transactional

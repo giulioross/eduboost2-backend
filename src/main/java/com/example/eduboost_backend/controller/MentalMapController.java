@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,7 @@ public class MentalMapController {
     private CloudinaryService cloudinaryService;
 
     @GetMapping
-    public ResponseEntity<MessageResponse> getAllMaps() {
+    public ResponseEntity<List<MentalMapDTO>> getAllMaps() {
         try {
             List<MentalMap> maps = mentalMapService.getMapsByUser();
             List<MentalMapDTO> mapDTOs = maps.stream()
@@ -43,15 +44,17 @@ public class MentalMapController {
 
             return ResponseEntity.ok()
                     .cacheControl(CacheControl.noCache())
-                    .body(new MessageResponse(mapDTOs.toString()));
+                    .body(mapDTOs);
         } catch (RuntimeException e) {
             System.out.println("Error in getAllMaps: " + e.getMessage());
             return ResponseEntity.status(401)
-                    .body(new MessageResponse("Authentication error: " + e.getMessage()));
+                    .cacheControl(CacheControl.noCache())
+                    .body(new ArrayList<>());
         } catch (Exception e) {
             System.out.println("Unexpected error in getAllMaps: " + e.getMessage());
             return ResponseEntity.status(500)
-                    .body(new MessageResponse("Internal server error: " + e.getMessage()));
+                    .cacheControl(CacheControl.noCache())
+                    .body(new ArrayList<>());
         }
     }
 
